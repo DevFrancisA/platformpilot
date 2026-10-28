@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlatformPilot</title>
+<style>
+:root{--bg:#0e1116;--panel:#161b22;--line:#262d38;--text:#e6edf3;--mute:#8b96a5;--acc:#4ea1ff;--ok:#3fb68b;--warn:#e3a33b;--bad:#f0616d;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:light){:root{--bg:#f6f8fa;--panel:#fff;--line:#d8dee4;--text:#1f2328;--mute:#656d76;--acc:#0969da;--ok:#1a7f5a;--warn:#9a6700;--bad:#cf222e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0;letter-spacing:.2px}
+header .tag{font:12px var(--mono);color:var(--mute);border:1px solid var(--line);padding:2px 8px;border-radius:99px}
+nav{margin-left:auto;display:flex;gap:4px}
+nav button{background:none;border:1px solid transparent;color:var(--mute);padding:6px 12px;border-radius:6px;cursor:pointer;font:inherit}
+nav button.on{color:var(--text);border-color:var(--line);background:var(--panel)}
+main{display:grid;grid-template-columns:340px 1fr;gap:16px;padding:16px 20px;max-width:1400px;margin:auto}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:0;padding:12px 14px;border-bottom:1px solid var(--line)}
+#alerts{max-height:calc(100vh - 150px);overflow:auto}
+.alert{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;padding:10px 14px;cursor:pointer;font:inherit}
+.alert:hover{background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.alert.sel{background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.alert b{display:block;font:12px var(--mono);color:var(--warn);word-break:break-word;font-weight:500}
+.alert span{color:var(--mute);font-size:12px}
+.pill{font:11px var(--mono);padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--mute);margin-left:6px}
+#empty{padding:60px 20px;text-align:center;color:var(--mute)}
+.body{padding:14px}
+.step{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);animation:in .25s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){.step{animation:none}}
+.step .t{font:12px var(--mono);color:var(--mute)}
+.thought{color:var(--mute);font-style:italic}
+.tool code{font:12px var(--mono);color:var(--acc)}
+details summary{cursor:pointer;color:var(--mute);font-size:12px;margin-top:2px}
+pre{margin:6px 0 0;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;font:12px/1.45 var(--mono);overflow:auto;max-height:220px;white-space:pre-wrap;word-break:break-word}
+.dx{margin-top:16px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.dx .hd{padding:12px 14px;background:color-mix(in srgb,var(--acc) 10%,transparent);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dx .cat{font:600 13px var(--mono)}
+.dx .sec{padding:12px 14px;border-top:1px solid var(--line)}
+.dx .sec h3{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+.dx ul{margin:0;padding-left:18px;color:var(--mute);font-size:13px}
+.actions{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 14px;border-radius:7px;cursor:pointer;font:inherit}
+.btn.go{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.btn:focus-visible,.alert:focus-visible,nav button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.btn:disabled{opacity:.5;cursor:default}
+.status{font:12px var(--mono);padding:2px 8px;border-radius:99px}
+.s-running,.s-awaiting_approval{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.s-resolved{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
+.s-fix_failed,.s-error,.s-rejected,.s-inconclusive{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:14px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:12px}
+.kpi .v{font:600 26px var(--mono)}
+.kpi .l{color:var(--mute);font-size:12px}
+.kpi .n{color:var(--mute);font-size:11px;margin-top:2px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:500;font-size:12px}
+td.num{font-family:var(--mono)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:90px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.hide{display:none}
+.note{color:var(--mute);font-size:12px;padding:0 14px 14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>PlatformPilot</h1><span class="tag" id="mode">agent: …</span>
+  <nav><button id="tInv" class="on">Investigate</button><button id="tEval">Evaluation</button></nav>
+</header>
+
+<main id="vInv">
+  <section class="panel"><h2>Firing alerts (40 injected failures)</h2><div id="alerts"></div></section>
+  <section class="panel" aria-live="polite">
+    <h2 id="runTitle">Investigation</h2>
+    <div id="empty">Pick an alert on the left. The agent will query pod logs, events and CloudWatch metrics, then propose a fix for you to approve.</div>
+    <div class="body hide" id="run"></div>
+  </section>
+</main>
+
+<main id="vEval" class="hide" style="grid-template-columns:1fr">
+  <section class="panel">
+    <h2>Evaluation suite</h2>
+    <div class="actions" style="border:0">
+      <button class="btn go" id="runEval">Run all 40 scenarios</button>
+      <span id="evalState" style="color:var(--mute);align-self:center"></span>
+    </div>
+    <div id="evalOut"><div id="empty" style="padding:30px">No results yet. Run the suite.</div></div>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s), api=(p,o)=>fetch(p,o).then(r=>r.json());
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let cur=null, timer=null;
+
+async function init(){
+  const sc=await api('/api/scenarios');
+  $('#alerts').innerHTML=sc.map(s=>`<button class="alert" data-id="${s.id}"><b>${esc(s.alert)}</b><span>${s.service} · ${s.namespace}${s.hard?'<em class="pill">noisy</em>':''}</span></button>`).join('');
+  $('#alerts').onclick=e=>{const b=e.target.closest('.alert');if(b)start(b)};
+  const ev=await api('/api/eval'); renderEval(ev);
+}
+async function start(btn){
+  document.querySelectorAll('.alert').forEach(a=>a.classList.remove('sel'));btn.classList.add('sel');
+  clearInterval(timer);
+  const {id}=await api('/api/runs',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({scenario_id:btn.dataset.id})});
+  cur=id; $('#empty').classList.add('hide'); $('#run').classList.remove('hide');
+  poll(); timer=setInterval(poll,350);
+}
+async function poll(){
+  const r=await api('/api/runs/'+cur); render(r);
+  $('#mode').textContent='agent: '+r.agent+(r.agent==='offline'?' (no API key)':'');
+  if(!['running'].includes(r.status)&&!(r.status==='awaiting_approval'&&false))clearInterval(timer);
+}
+function stepHtml(s){
+  if(s.kind==='thought')return `<div class="step"><div class="t">${s.t}s</div><div class="thought">${esc(s.text)}</div></div>`;
+  const a=Object.values(s.args||{}).join(', ');
+  return `<div class="step tool"><div class="t">${s.t}s</div><div><code>${s.tool}(${esc(a)})</code>
+  <details><summary>result</summary><pre>${esc(JSON.stringify(s.result,null,2))}</pre></details></div></div>`;
+}
+function render(r){
+  const d=r.diagnosis, sc=r.scenario;
+  let h=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+    <b style="font:13px var(--mono)">${esc(sc.alert)}</b><span class="status s-${r.status}">${r.status.replace('_',' ')}</span>
+    ${r.agent_seconds!=null?`<span class="pill">${r.agent_seconds}s · ${r.tool_calls} tool calls</span>`:''}</div>`;
+  h+=r.steps.map(stepHtml).join('');
+  if(r.status==='running')h+=`<div class="step"><div class="t">…</div><div class="thought">investigating</div></div>`;
+  if(r.error)h+=`<pre>${esc(r.error)}</pre>`;
+  if(d){
+    const f=d.fix||{};
+    h+=`<div class="dx"><div class="hd"><span class="cat">${esc(d.category)}</span><span class="pill">confidence ${(d.confidence*100|0)}%</span></div>
+    <div class="sec"><h3>Root cause</h3>${esc(d.summary)}</div>
+    <div class="sec"><h3>Evidence</h3><ul>${(d.evidence||[]).map(e=>`<li>${esc(e)}</li>`).join('')}</ul></div>
+    <div class="sec"><h3>Proposed fix</h3><pre>${esc(f.action)}  ${esc(f.target||'')}\n${esc(JSON.stringify(f.params||{},null,2))}</pre></div>`;
+    if(r.status==='awaiting_approval')h+=`<div class="actions"><button class="btn go" onclick="decide('approve')">Approve &amp; apply</button><button class="btn" onclick="decide('reject')">Reject</button></div>`;
+    if(r.apply)h+=`<div class="sec"><h3>Result</h3>${esc(r.apply.detail)}${r.apply.healed?' — pods healthy ✔':''}</div>`;
+    h+='</div>';
+  }
+  $('#run').innerHTML=h;
+}
+async function decide(w){render(await api(`/api/runs/${cur}/${w}`,{method:'POST'}))}
+
+/* ---- evaluation */
+function renderEval(ev){
+  $('#evalState').textContent=ev.state.running?'running…':(ev.state.error||'');
+  $('#runEval').disabled=ev.state.running;
+  const r=ev.results; if(!r)return; const s=r.summary, p=x=>(x*100).toFixed(0)+'%';
+  const speed=(s.mttd_manual_min/s.mttd_agent_min).toFixed(1);
+  $('#evalOut').innerHTML=`<div class="kpis">
+   <div class="kpi"><div class="v">${p(s.root_cause_accuracy)}</div><div class="l">Root-cause accuracy</div><div class="n">${p(s.hard_accuracy)} on noisy scenarios</div></div>
+   <div class="kpi"><div class="v">${p(s.fix_accuracy)}</div><div class="l">Fix accuracy</div><div class="n">${p(s.remediation_success)} healed after approval</div></div>
+   <div class="kpi"><div class="v">${s.mttd_manual_min.toFixed(1)} → ${s.mttd_agent_min.toFixed(1)}m</div><div class="l">Mean time to diagnose</div><div class="n">${speed}× faster (manual is modeled)</div></div>
+   <div class="kpi"><div class="v">${s.mean_tool_calls.toFixed(1)}</div><div class="l">Tool calls / incident</div><div class="n">${s.mean_agent_seconds}s agent compute</div></div></div>
+   <div class="note">Agent: <b>${s.agent}</b>${s.model?' ('+s.model+')':''} · n=${s.n} · ${s.finished_at}. Manual baseline = ${s.assumptions.ack_triage_min}m triage + ${s.assumptions.per_step_min}m per lookup; agent time includes ${s.assumptions.approve_min}m human review. See README → Methodology.</div>
+   <div style="padding:0 14px 14px;overflow:auto"><table><tr><th>Category</th><th>Accuracy</th><th></th></tr>
+   ${Object.entries(s.by_category).map(([c,v])=>`<tr><td>${c}</td><td class="num">${p(v)}</td><td><div class="bar"><i style="width:${v*100}%"></i></div></td></tr>`).join('')}</table></div>
+   <div style="padding:0 14px 14px;overflow:auto"><table><tr><th>Scenario</th><th>Predicted</th><th>RC</th><th>Fix</th><th>Calls</th><th>Manual</th><th>Agent</th></tr>
+   ${r.rows.map(x=>`<tr><td>${x.id}${x.hard?'<em class="pill">noisy</em>':''}</td><td>${x.predicted}</td><td>${x.root_cause_correct?'✔':'✘'}</td><td>${x.fix_correct?'✔':'✘'}</td><td class="num">${x.tool_calls}</td><td class="num">${x.manual_minutes}m</td><td class="num">${x.agent_minutes}m</td></tr>`).join('')}</table></div>`;
+}
+$('#runEval').onclick=async()=>{await api('/api/eval',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});
+  const t=setInterval(async()=>{const ev=await api('/api/eval');renderEval(ev);if(!ev.state.running)clearInterval(t)},700)};
+$('#tInv').onclick=()=>tab(true);$('#tEval').onclick=()=>tab(false);
+function tab(inv){$('#vInv').classList.toggle('hide',!inv);$('#vEval').classList.toggle('hide',inv);$('#tInv').classList.toggle('on',inv);$('#tEval').classList.toggle('on',!inv)}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+# Inject real failures into a test cluster:  kubectl apply -f k8s/failures/failures.yaml
+apiVersion: v1
+kind: Namespace
+metadata: {name: pp-demo}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: oom-demo, namespace: pp-demo}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: oom-demo}}
+  template:
+    metadata: {labels: {app: oom-demo}}
+    spec:
+      containers:
+        - name: app
+          image: polinux/stress
+          command: ["stress", "--vm", "1", "--vm-bytes", "300M", "--vm-hang", "1"]
+          resources: {limits: {memory: 128Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: badimage-demo, namespace: pp-demo}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: badimage-demo}}
+  template:
+    metadata: {labels: {app: badimage-demo}}
+    spec:
+      containers: [{name: app, image: "nginx:1.99.99-does-not-exist"}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: missingenv-demo, namespace: pp-demo}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: missingenv-demo}}
+  template:
+    metadata: {labels: {app: missingenv-demo}}
+    spec:
+      containers:
+        - name: app
+          image: busybox
+          command: ["sh", "-c", "[ -n \"$DATABASE_URL\" ] || { echo 'ERROR required environment variable DATABASE_URL is not set'; exit 1; }"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: badprobe-demo, namespace: pp-demo}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: badprobe-demo}}
+  template:
+    metadata: {labels: {app: badprobe-demo}}
+    spec:
+      containers:
+        - name: app
+          image: nginx
+          readinessProbe: {httpGet: {path: /healthz, port: 80}, periodSeconds: 5}
